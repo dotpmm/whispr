@@ -1,0 +1,19 @@
+[project]
+name = "whisper"
+version = "0.1.0"
+description = "OpenAI's Whisper model, now on ur CPU!"
+readme = "README.md"
+authors = [{ name = "dotpmm", email = "dotpmm@proton.me" }]
+requires-python = ">=3.13"
+keywords = ["whisper", "speech-to-text", "ai", "transcription", "keyboard-shortcut"]
+license = { text = "MIT" }
+
+dependencies = [
+    "faster-whisper>=1.2.1",
+    "pynput>=1.8.1",
+    "pyperclip>=1.11.0",
+    "sounddevice>=0.5.5",
+]
+
+[project.urls]
+Repository = "https://github.com/dotpmm/whisper.git"
