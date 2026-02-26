@@ -53,8 +53,8 @@
 
   header {
     display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .logo {
@@ -62,6 +62,7 @@
     font-weight: 800;
     letter-spacing: -0.04em;
     color: var(--accent);
+    line-height: 1;
   }
 
   .logo-sub {
@@ -305,7 +306,7 @@
 <div class="container">
   <header>
     <span class="logo">.whispr</span>
-    <span class="logo-sub">/ voice → text (self-hosted)</span>
+    <span class="logo-sub">./voice → ./text (self hosted!)</span>
   </header>
 
   <div class="recorder-card">
@@ -327,7 +328,7 @@
 
   <div class="output-card">
     <div class="output-label">
-      <span>Transcription</span>
+      <span>transcription</span>
       <button class="copy-btn" id="copy-btn">copy</button>
     </div>
     <div class="shimmer-wrap" id="shimmer">
@@ -339,7 +340,7 @@
   </div>
 
   <div id="history-section" style="display:none">
-    <div class="history-label">Recent</div>
+    <div class="history-label">recent</div>
     <div class="history-list" id="history-list"></div>
   </div>
 </div>
