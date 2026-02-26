@@ -1,7 +1,7 @@
 [project]
 name = "whisper"
 version = "0.1.0"
-description = "OpenAI's Whisper model, now on ur CPU!"
+description = "OpenAI's Whisper model, self hosted!"
 readme = "README.md"
 authors = [{ name = "dotpmm", email = "dotpmm@proton.me" }]
 requires-python = ">=3.13"

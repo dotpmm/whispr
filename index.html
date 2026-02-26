@@ -32,7 +32,6 @@
     overflow: hidden;
   }
 
-  /* Background grain */
   body::before {
     content: '';
     position: fixed;
@@ -85,7 +84,6 @@
     gap: 1.5rem;
   }
 
-  /* Waveform visualizer */
   .viz-ring {
     position: relative;
     width: 140px;
@@ -179,7 +177,6 @@
     margin-left: auto;
   }
 
-  /* Output area */
   .output-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -232,7 +229,6 @@
     font-style: italic;
   }
 
-  /* Thinking shimmer */
   .shimmer-wrap {
     display: none;
     gap: 0.5rem;
@@ -255,7 +251,6 @@
 
   @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-  /* History */
   .history-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.62rem;
@@ -309,8 +304,8 @@
 <body>
 <div class="container">
   <header>
-    <span class="logo">whispr</span>
-    <span class="logo-sub">/ voice → text</span>
+    <span class="logo">.whispr</span>
+    <span class="logo-sub">/ voice → text (self-hosted)</span>
   </header>
 
   <div class="recorder-card">
@@ -332,7 +327,7 @@
 
   <div class="output-card">
     <div class="output-label">
-      <span>transcription</span>
+      <span>Transcription</span>
       <button class="copy-btn" id="copy-btn">copy</button>
     </div>
     <div class="shimmer-wrap" id="shimmer">
@@ -344,7 +339,7 @@
   </div>
 
   <div id="history-section" style="display:none">
-    <div class="history-label">recent</div>
+    <div class="history-label">Recent</div>
     <div class="history-list" id="history-list"></div>
   </div>
 </div>
@@ -459,13 +454,11 @@ async function stopAndTranscribe() {
   if (analyser) { cancelAnimationFrame(animFrame); analyser = null; }
   ctx.clearRect(0, 0, 140, 140);
 
-  // Show shimmer
   shimmer.classList.add('visible');
   outputText.textContent = '';
 
   await new Promise(res => { mediaRecorder.onstop = res; mediaRecorder.stop(); });
 
-  // Stop all tracks
   mediaRecorder.stream.getTracks().forEach(t => t.stop());
   if (audioCtx) { audioCtx.close(); audioCtx = null; }
 

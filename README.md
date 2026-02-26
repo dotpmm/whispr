@@ -8,39 +8,39 @@ app_port: 7860
 pinned: false
 ---
 
-# Whisper Keybind Daemon
+# Whispr
 
-A lightweight Python script that lets you transcribe speech to your clipboard using a global keyboard shortcut, powered by OpenAI's Whisper (via `faster-whisper`).
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://huggingface.co/spaces/dotpmm/whispr)
+![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)
+![Python](https://img.shields.io/badge/python-3.11+-blue?logo=python)
+![Whisper](https://img.shields.io/badge/whisper-base-green?logo=openai)
 
-## Features
+A web-based speech transcription service powered by OpenAI's Whisper model. Upload audio and get instant text transcription.
 
-- **Global Hotkey:** Works anywhere in your OS.
-- **Local Processing:** Runs entirely on your CPU using `int8` quantization.
-- **Auto-Copy:** Transcribed text is automatically placed in your clipboard.
-- **Simple Setup:** Configures your preferred keybind on the first run.
+## 🚀 Try it live
 
-## Installation
+**Live demo:** https://huggingface.co/spaces/dotpmm/whispr
 
-1. Clone the repository.
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   *Note: Requires `portaudio` (Windows) or `libportaudio2` (Linux) for `sounddevice`.*
+## How it works
 
-## Usage
+- **FastAPI backend** serves a web interface and transcription API
+- **Whisper model** (base, int8) runs locally on CPU for privacy
+- **Web interface** lets you record or upload audio files
+- **REST API** at `/transcribe` accepts audio uploads
 
-Run the script:
+## Quick start
+
+**Run locally:**
 ```bash
-python main.py
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
-On the first run, it will ask you to press the key combination you want to use (e.g., `Ctrl + Alt + R`). After that:
-1. Press your hotkey to **start** recording.
-2. Press it again to **stop**.
-3. Wait a moment for transcription to finish and paste the result!
+**Or with Docker:**
+```bash
+docker build -t whispr .
+docker run -p 7860:7860 whispr
+```
 
-## Configuration
-
-Settings are stored in `~/.whisper_keybind_config.json`. Delete this file if you want to change your hotkey.
+Open http://localhost:7860 and start transcribing!
 

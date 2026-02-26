@@ -20,14 +20,14 @@ CACHE_DIR = os.environ.get("WHISPER_CACHE", None)
 async def load_model():
     global model
     from faster_whisper import WhisperModel
-    print("[INFO] Loading Whisper model...")
+    print("INFO:     Loading Whisper model")
     model = WhisperModel(
         "base",
         device="cpu",
         compute_type="int8",
         download_root=CACHE_DIR,
     )
-    print("[INFO] Whisper model ready.")
+    print("INFO:     Whisper model ready.")
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
