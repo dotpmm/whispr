@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>whispr</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: #222;
+    --accent: #e8ff57;
+    --accent2: #ff4f4f;
+    --text: #f0f0f0;
+    --muted: #555;
+    --recording: #ff4f4f;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow: hidden;
+  }
+
+  /* Background grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .logo {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+  }
+
+  .logo-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .recorder-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  /* Waveform visualizer */
+  .viz-ring {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .viz-ring canvas {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+  }
+
+  .btn-record {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    background: var(--border);
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.15s ease, background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-record:hover { transform: scale(1.05); }
+  .btn-record:active { transform: scale(0.97); }
+
+  .btn-record .dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent2);
+    transition: border-radius 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+
+  .btn-record.recording {
+    background: rgba(255, 79, 79, 0.15);
+    box-shadow: 0 0 0 2px var(--recording);
+  }
+
+  .btn-record.recording .dot {
+    border-radius: 4px;
+    transform: scale(0.85);
+    background: var(--recording);
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(0.85); }
+    50% { transform: scale(0.75); }
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    min-height: 1rem;
+    transition: color 0.2s;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.2s;
+  }
+
+  .status-row.recording-state { color: var(--recording); }
+  .status-row.recording-state .status-dot { background: var(--recording); animation: blink 1s ease infinite; }
+  .status-row.processing-state { color: var(--accent); }
+  .status-row.processing-state .status-dot { background: var(--accent); }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .timer {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* Output area */
+  .output-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 1.5rem;
+    min-height: 140px;
+    position: relative;
+  }
+
+  .output-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: color 0.15s, border-color 0.15s;
+    border-radius: 2px;
+  }
+
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  #output-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  #output-text:empty::before {
+    content: 'your transcription will appear here...';
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* Thinking shimmer */
+  .shimmer-wrap {
+    display: none;
+    gap: 0.5rem;
+    flex-direction: column;
+  }
+
+  .shimmer-wrap.visible { display: flex; }
+
+  .shimmer-line {
+    height: 12px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--border) 25%, #1e1e1e 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s ease infinite;
+  }
+
+  .shimmer-line:nth-child(1) { width: 85%; }
+  .shimmer-line:nth-child(2) { width: 65%; animation-delay: 0.1s; }
+  .shimmer-line:nth-child(3) { width: 45%; animation-delay: 0.2s; }
+
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* History */
+  .history-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .history-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding: 0.35rem 0.5rem;
+    border-left: 2px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .history-item:hover { color: var(--text); border-color: var(--accent); }
+
+  .kbd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    background: var(--border);
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    color: var(--muted);
+  }
+
+  .hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <span class="logo">whispr</span>
+    <span class="logo-sub">/ voice → text</span>
+  </header>
+
+  <div class="recorder-card">
+    <div class="viz-ring">
+      <canvas id="viz" width="140" height="140"></canvas>
+      <button class="btn-record" id="btn-record" title="Click or press Space to record">
+        <div class="dot"></div>
+      </button>
+    </div>
+
+    <div class="status-row" id="status-row">
+      <div class="status-dot"></div>
+      <span id="status-text">idle</span>
+      <span class="timer" id="timer"></span>
+    </div>
+
+    <div class="hint"><span class="kbd">Space</span> to record · <span class="kbd">Space</span> again to send</div>
+  </div>
+
+  <div class="output-card">
+    <div class="output-label">
+      <span>transcription</span>
+      <button class="copy-btn" id="copy-btn">copy</button>
+    </div>
+    <div class="shimmer-wrap" id="shimmer">
+      <div class="shimmer-line"></div>
+      <div class="shimmer-line"></div>
+      <div class="shimmer-line"></div>
+    </div>
+    <div id="output-text"></div>
+  </div>
+
+  <div id="history-section" style="display:none">
+    <div class="history-label">recent</div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</div>
+
+<script>
+const btn = document.getElementById('btn-record');
+const statusRow = document.getElementById('status-row');
+const statusText = document.getElementById('status-text');
+const timerEl = document.getElementById('timer');
+const outputText = document.getElementById('output-text');
+const shimmer = document.getElementById('shimmer');
+const copyBtn = document.getElementById('copy-btn');
+const histSection = document.getElementById('history-section');
+const histList = document.getElementById('history-list');
+const vizCanvas = document.getElementById('viz');
+const ctx = vizCanvas.getContext('2d');
+
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let timerInterval = null;
+let timerSecs = 0;
+let analyser = null;
+let animFrame = null;
+let history = [];
+let audioCtx = null;
+let sourceNode = null;
+
+function setStatus(state, label) {
+  statusRow.className = 'status-row ' + (state ? state + '-state' : '');
+  statusText.textContent = label;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function drawViz() {
+  if (!analyser) {
+    ctx.clearRect(0, 0, 140, 140);
+    return;
+  }
+  const bufLen = analyser.frequencyBinCount;
+  const data = new Uint8Array(bufLen);
+  analyser.getByteTimeDomainData(data);
+
+  ctx.clearRect(0, 0, 140, 140);
+
+  const cx = 70, cy = 70, r = 58;
+  const slices = Math.min(bufLen, 80);
+
+  ctx.beginPath();
+  for (let i = 0; i <= slices; i++) {
+    const angle = (i / slices) * Math.PI * 2 - Math.PI / 2;
+    const val = data[Math.floor(i * bufLen / slices)] / 128 - 1;
+    const amp = r + val * 22;
+    const x = cx + Math.cos(angle) * amp;
+    const y = cy + Math.sin(angle) * amp;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = isRecording ? '#ff4f4f' : '#333';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  animFrame = requestAnimationFrame(drawViz);
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    audioCtx = new AudioContext();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    sourceNode = audioCtx.createMediaStreamSource(stream);
+    sourceNode.connect(analyser);
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.start(100);
+
+    isRecording = true;
+    btn.classList.add('recording');
+    setStatus('recording', 'recording');
+    timerSecs = 0;
+    timerEl.textContent = '00:00';
+    timerInterval = setInterval(() => {
+      timerSecs++;
+      timerEl.textContent = formatTime(timerSecs);
+    }, 1000);
+
+    drawViz();
+  } catch (e) {
+    setStatus('', 'mic access denied');
+  }
+}
+
+async function stopAndTranscribe() {
+  if (!mediaRecorder) return;
+
+  clearInterval(timerInterval);
+  timerEl.textContent = '';
+  isRecording = false;
+  btn.classList.remove('recording');
+  setStatus('processing', 'transcribing...');
+
+  if (analyser) { cancelAnimationFrame(animFrame); analyser = null; }
+  ctx.clearRect(0, 0, 140, 140);
+
+  // Show shimmer
+  shimmer.classList.add('visible');
+  outputText.textContent = '';
+
+  await new Promise(res => { mediaRecorder.onstop = res; mediaRecorder.stop(); });
+
+  // Stop all tracks
+  mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+
+  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+  const form = new FormData();
+  form.append('file', blob, 'recording.webm');
+
+  try {
+    const res = await fetch('/transcribe', { method: 'POST', body: form });
+    const data = await res.json();
+
+    shimmer.classList.remove('visible');
+
+    if (data.text) {
+      outputText.textContent = data.text;
+      addHistory(data.text);
+      setStatus('', 'done');
+    } else if (data.error) {
+      outputText.textContent = '⚠ ' + data.error;
+      setStatus('', 'error');
+    } else {
+      outputText.textContent = '(no speech detected)';
+      setStatus('', 'idle');
+    }
+  } catch (e) {
+    shimmer.classList.remove('visible');
+    outputText.textContent = '⚠ network error';
+    setStatus('', 'error');
+  }
+}
+
+function toggle() {
+  if (!isRecording) startRecording();
+  else stopAndTranscribe();
+}
+
+btn.addEventListener('click', toggle);
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); toggle(); }
+});
+
+copyBtn.addEventListener('click', () => {
+  const t = outputText.textContent;
+  if (!t) return;
+  navigator.clipboard.writeText(t).then(() => {
+    copyBtn.textContent = 'copied!';
+    setTimeout(() => copyBtn.textContent = 'copy', 1500);
+  });
+});
+
+function addHistory(text) {
+  history.unshift(text);
+  if (history.length > 5) history.pop();
+  histSection.style.display = 'block';
+  histList.innerHTML = '';
+  history.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    el.textContent = t;
+    el.title = t;
+    el.addEventListener('click', () => { outputText.textContent = t; });
+    histList.appendChild(el);
+  });
+}
+</script>
+</body>
+</html>

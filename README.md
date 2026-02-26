@@ -1,3 +1,13 @@
+---
+title: Whispr
+emoji: 🎙️
+colorFrom: yellow
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Whisper Keybind Daemon
 
 A lightweight Python script that lets you transcribe speech to your clipboard using a global keyboard shortcut, powered by OpenAI's Whisper (via `faster-whisper`).
