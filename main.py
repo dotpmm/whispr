@@ -32,8 +32,9 @@ async def load_model():
 @app.get("/", response_class=HTMLResponse)
 async def index():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(base_dir, "index.html")) as f:
-        return f.read()
+    with open(os.path.join(base_dir, "index.html"), encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content=content, media_type="text/html; charset=utf-8")
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
